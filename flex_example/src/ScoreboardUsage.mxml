@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   creationComplete="application1_creationCompleteHandler(event)"
+			   minWidth="955" minHeight="600">
+	<fx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			
+			import scoreboard.api.classes.Scoreboard;
+			import scoreboard.model.vo.AMFResponse;
+			import scoreboard.model.vo.ScoreVO;
+			import scoreboard.model.vo.ScoreboardVO;
+
+			/**
+			 * Start app.
+			 */
+			protected function application1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				_initAMFClasses();
+				_getTopScores();
+			}
+			
+			/**
+			 * Makes sure all remote mapped classes are registered so
+			 * they are AMF encoded/decoded properly.
+			 */
+			private function _initAMFClasses():void
+			{
+				registerClassAlias("ScoreboardVO", ScoreboardVO);
+				registerClassAlias("AMFResponse", AMFResponse);
+				registerClassAlias("ScoreVO", ScoreVO);
+			}
+			
+			/**
+			 * Gets the list of top scores.
+			 */
+			private function _getTopScores():void
+			{
+				var scoresboard:ScoreboardVO = new ScoreboardVO();
+					scoresboard.size = 10;
+					scoresboard.page = 1;
+				Scoreboard.getTopScores(_handleScoresSuccess, _handleScoresFail, scoresboard);
+			}
+			/**
+			 * Handles response from amf server.
+			 */
+			private function _handleScoresSuccess( amfResponse:AMFResponse ):void
+			{
+				if (amfResponse.success)
+				{
+					var scoreboardVO:ScoreboardVO = amfResponse.data as ScoreboardVO;
+					grid.dataProvider = scoreboardVO.scores;
+				}
+			}
+			/**
+			 * Something bad happened trying to talk to the server.
+			 */
+			private function _handleScoresFail( fault:Object ):void
+			{
+				trace("fail");
+			}
+
+			/**
+			 * Adds a new score to the scoreboard.
+			 */
+			protected function ui_btn_addScore_clickHandler(event:MouseEvent):void
+			{
+				var scoreVO:ScoreVO		= new ScoreVO();
+					scoreVO.name		= ui_ti_name.text;
+					scoreVO.device		= ui_ti_device.text;
+					scoreVO.score		= Number(ui_ti_score.text);
+				Scoreboard.addScore(_handleAddScoreSuccess, _handleAddSourceFail, scoreVO);
+			}
+			
+			/**
+			 * Handles a response from the server when trying to add a score.
+			 */
+			private function _handleAddScoreSuccess(amfResponse:AMFResponse):void
+			{
+				if (amfResponse.success)
+				{
+					Alert.show( "Added successfully!", "Add Score", 4, null, _refresh );
+				}
+				else
+				{
+					Alert.show( "Add failed", "Add Score" );
+				}
+			}
+			
+			/**
+			 * When the added successfully window is closed refreshes the top scores list.
+			 */
+			private function _refresh(event:CloseEvent):void
+			{
+				_getTopScores();
+			}
+			/**
+			 * Something happened and AS3 couldn't connect with the server.
+			 */
+			private function _handleAddSourceFail(fault:Object):void
+			{
+				Alert.show( "Add failed", "Add Score" );
+			}
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:VGroup width="100%" height="100%">
+		
+		<mx:Form>
+			<mx:FormItem label="Name:">
+				<s:TextInput id="ui_ti_name" />
+			</mx:FormItem>
+			<mx:FormItem label="Score:">
+				<s:TextInput id="ui_ti_score" />
+			</mx:FormItem>
+			<mx:FormItem label="Device:">
+				<s:TextInput id="ui_ti_device" />
+			</mx:FormItem>
+			<mx:FormItem>
+				<s:Button id="ui_btn_addScore" label="Add Score" click="ui_btn_addScore_clickHandler(event)" />
+			</mx:FormItem>
+		</mx:Form>
+		
+		<mx:DataGrid id="grid" width="100%" height="100%">
+			<mx:columns>
+				<mx:DataGridColumn dataField="id" headerText="id" />
+				<mx:DataGridColumn dataField="name" headerText="name" />
+				<mx:DataGridColumn dataField="score" headerText="score" />
+				<mx:DataGridColumn dataField="device" headerText="device" />
+			</mx:columns>
+		</mx:DataGrid>
+		
+	</s:VGroup>
+	
+</s:Application>
